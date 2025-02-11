@@ -38,7 +38,7 @@ class AuthService {
       showSnackbar(context, 'ลงทะเบียนสำเร็จ');
       if (userCredential.user != null) {
 // Redirect to profile setup
-        Navigator.pushReplacementNamed(context, ProfileSetup.routeName);
+        Navigator.pushReplacementNamed(context, profilesetup.routeName);
       }
       return userCredential;
     } on FirebaseAuthException catch (e) {
@@ -86,3 +86,4 @@ class AuthService {
     }
   }
 }
+

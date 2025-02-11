@@ -1,3 +1,4 @@
+import 'package:finalprojectsecb_attachai/profilesetup.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'auth.dart';
@@ -52,6 +53,22 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  void _navigateToProfileSetup() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => profilesetup(
+          userData: _userData,
+        ),
+      ),
+    ).then((result) {
+      if (result == true) {
+        _fetchUserData(); // รีเฟรชข้อมูลเมื่อแกไขสําเร็จ ้
+      }
+    });
+  }
+
+  // ส่วนออกแบบจอ
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
@@ -84,6 +101,11 @@ class _HomePageState extends State<HomePage> {
                     ? Icon(Icons.camera_alt)
                     : null,
               ),
+            ),
+            ListTile(
+              leading: Icon(Icons.edit),
+              title: Text('แกไขโปรไฟล์: Edit Profile'),
+              onTap: _navigateToProfileSetup,
             ),
             ListTile(
               leading: Icon(Icons.logout),
