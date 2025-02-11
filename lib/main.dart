@@ -1,3 +1,4 @@
+import 'package:finalprojectsecb_attachai/nav.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
@@ -50,7 +51,7 @@ class MyApp extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasData) {
-            return HomePage(); // ตรวจสอบว่ามี HomePage และท างานได้
+            return NavBar(); // ตรวจสอบว่ามี HomePage และท างานได้
           } else {
             return const SigninPage(); // ตรวจสอบว่ามี SigninPage และท างานได้
           }
