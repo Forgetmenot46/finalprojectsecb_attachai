@@ -153,7 +153,7 @@ class _MyHomePageState extends State<profilesetup> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('………'),
+        title: Text('Edit Profile'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

@@ -4,7 +4,7 @@ import 'auth.dart';
 class SigninPage extends StatefulWidget {
   static const String routeName = '/login';
   const SigninPage({super.key});
-  
+
   @override
   _SigninPageState createState() => _SigninPageState();
 }
@@ -12,7 +12,7 @@ class SigninPage extends StatefulWidget {
 class _SigninPageState extends State<SigninPage> {
   final _formKey = GlobalKey<FormState>();
   final AuthService _auth = AuthService();
-  
+
   String _email = '';
   String _password = '';
   bool _isLoading = false;
@@ -37,7 +37,12 @@ class _SigninPageState extends State<SigninPage> {
                 keyboardType: TextInputType.emailAddress,
                 decoration: const InputDecoration(labelText: 'Email'),
                 validator: (value) {
-                  if (value == null || value.isEmpty) return 'Please enter your email';
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your email';
+                  }
+                  if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                    return 'Please enter a valid email';
+                  }
                   return null;
                 },
                 onChanged: (value) {
@@ -49,7 +54,12 @@ class _SigninPageState extends State<SigninPage> {
                 obscureText: true,
                 decoration: const InputDecoration(labelText: 'Password'),
                 validator: (value) {
-                  if (value == null || value.isEmpty) return 'Please enter your password';
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your password';
+                  }
+                  if (value.length < 6) {
+                    return 'Password must be at least 6 characters';
+                  }
                   return null;
                 },
                 onChanged: (value) {
@@ -57,18 +67,73 @@ class _SigninPageState extends State<SigninPage> {
                 },
               ),
               const SizedBox(height: 16),
-              _isLoading
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton(
+              if (_isLoading)
+                const CircularProgressIndicator()
+              else
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ElevatedButton(
                       onPressed: () async {
                         if (_formKey.currentState!.validate()) {
                           _setLoading(true);
-                          await _auth.signInWithEmailAndPassword(_email, _password, context);
-                          _setLoading(false);
+                          try {
+                            await _auth.signInWithEmailAndPassword(
+                                _email, _password, context);
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Login failed: $e')),
+                            );
+                          } finally {
+                            _setLoading(false);
+                          }
                         }
                       },
                       child: const Text('Sign In'),
                     ),
+                    ElevatedButton(
+                      onPressed: () async {
+                        if (_formKey.currentState!.validate()) {
+                          _setLoading(true);
+                          try {
+                            await _auth.registerWithEmailAndPassword(
+                                _email, _password, context);
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Sign up failed: $e')),
+                            );
+                          } finally {
+                            _setLoading(false);
+                          }
+                        }
+                      },
+                      child: const Text('Sign Up'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () async {
+                        if (_email.isNotEmpty) {
+                          _setLoading(true);
+                          try {
+                            await _auth.resetPassword(_email, context);
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content: Text('Reset password failed: $e')),
+                            );
+                          } finally {
+                            _setLoading(false);
+                          }
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text('กรุณากรอกอีเมล์ก่อน')),
+                          );
+                        }
+                      },
+                      child: const Text('Forget My Password'),
+                    ),
+                  ],
+                ),
             ],
           ),
         ),

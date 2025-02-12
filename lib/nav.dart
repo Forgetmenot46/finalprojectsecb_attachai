@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'home_page.dart'; // หน้าหลัก
 import 'share_page.dart'; // หน้าแชร์ข้อมูล
 import 'howto_page.dart'; // หน้าคู่มือ
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'profilesetup.dart';
+import 'auth.dart';
 
 class NavBar extends StatefulWidget {
   @override
@@ -10,11 +14,69 @@ class NavBar extends StatefulWidget {
 
 class _NavBarState extends State<NavBar> {
   int _selectedIndex = 0;
+  final AuthService _auth = AuthService();
+  late DatabaseReference _userRef;
+  Map<String, dynamic>? _userData;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    final user = _auth.currentUser;
+    if (user != null) {
+      _userRef =
+          FirebaseDatabase.instance.ref().child('usersAttachai/${user.uid}');
+      _fetchUserData();
+    } else {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _fetchUserData() async {
+    try {
+      final snapshot = await _userRef.get();
+      if (snapshot.exists) {
+        setState(() {
+          _userData = Map<String, dynamic>.from(snapshot.value as Map);
+        });
+      } else {
+        setState(() {
+          _userData = null;
+        });
+      }
+    } catch (e) {
+      print('Error fetching user data: $e');
+      setState(() {
+        _userData = null;
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _navigateToProfileSetup() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => profilesetup(
+          userData: _userData,
+        ),
+      ),
+    ).then((result) {
+      if (result == true) {
+        _fetchUserData();
+      }
+    });
+  }
 
   final List<Widget> _pages = [
-    HomePage(), // หน้าหลัก
-    SharePage(), // หน้าแชร์ข้อมูล
-    HowToPage(), // หน้าคู่มือ
+    HomePage(),
+    SharePage(),
+    HowToPage(),
   ];
 
   void _onItemTapped(int index) {
@@ -25,7 +87,71 @@ class _NavBarState extends State<NavBar> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Color.fromARGB(255, 65, 0, 71),
+        title: Text(_selectedIndex == 0
+            ? 'หน้าแรก: Home Page'
+            : _selectedIndex == 1
+                ? 'Share'
+                : 'How To'),
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            UserAccountsDrawerHeader(
+              decoration: BoxDecoration(
+                color: Color.fromARGB(255, 86, 0, 107),
+              ),
+              accountName: Text(
+                _userData?['prefix'] != null
+                    ? '${_userData!['prefix']} ${_userData!['firstName']}${_userData!['lastName']}'
+                    : 'ผู้ใช้: User',
+                style: TextStyle(color: Colors.white),
+              ),
+              accountEmail: Text(
+                _auth.currentUser?.email ?? 'อีเมล: Email',
+                style: TextStyle(color: Colors.white),
+              ),
+              currentAccountPicture: CircleAvatar(
+                backgroundImage: _userData?['profileImage'] != null
+                    ? NetworkImage(_userData!['profileImage'])
+                    : AssetImage('assets/default_avatar.png') as ImageProvider,
+                child: _userData?['profileImage'] == null
+                    ? Icon(Icons.camera_alt)
+                    : null,
+              ),
+            ),
+            ListTile(
+              leading: Icon(Icons.edit, color: Colors.blue[900]),
+              title: Text(
+                'แกไขโปรไฟล์: Edit Profile',
+                style: TextStyle(color: Colors.blue[900]),
+              ),
+              onTap: _navigateToProfileSetup,
+            ),
+            ListTile(
+              leading: Icon(Icons.logout, color: Colors.blue[900]),
+              title: Text(
+                'ออกจากระบบ: Logout',
+                style: TextStyle(color: Colors.blue[900]),
+              ),
+              onTap: () async {
+                await _auth.signOut(context);
+              },
+            ),
+          ],
+        ),
+      ),
       body: _pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
@@ -43,7 +169,7 @@ class _NavBarState extends State<NavBar> {
           ),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: Colors.blue,
+        selectedItemColor: Color.fromARGB(255, 65, 0, 71),
         onTap: _onItemTapped,
       ),
     );
