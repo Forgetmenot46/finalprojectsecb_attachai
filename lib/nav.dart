@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'home_page.dart'; // หน้าหลัก
 import 'share_page.dart'; // หน้าแชร์ข้อมูล
 import 'howto_page.dart'; // หน้าคู่มือ
-import 'package:firebase_auth/firebase_auth.dart';
+
 import 'package:firebase_database/firebase_database.dart';
 import 'profilesetup.dart';
 import 'auth.dart';
