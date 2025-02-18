@@ -1,10 +1,10 @@
+import 'package:finalprojectsecb_attachai/showdetail.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'auth.dart';
 
 class SharePage extends StatefulWidget {
   @override
@@ -230,6 +230,20 @@ class _SharePageState extends State<SharePage> {
                         Text('${energy['description']}'),
                       ],
                     ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ShowDetail(
+                            uid: energy['id'], // Corrected this line
+                            title: energy['name'], // Corrected this line
+                            description: energy['description'],
+                            type: energy['type'],
+                            imageUrl: energy['imageUrl'],
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 );
               },
