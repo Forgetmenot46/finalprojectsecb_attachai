@@ -11,6 +11,37 @@ class SharePage extends StatefulWidget {
   _SharePageState createState() => _SharePageState();
 }
 
+//ประกาศตัวแปร _ratingsRef เพื่ออ้างอิงตาราง ratings
+final DatabaseReference _ratingsRef =
+    FirebaseDatabase.instance.ref().child("ratingAttachai");
+
+// ฟังก์ชันดึงค่าเฉลี่ยคะแนนของแต่ละรายการ
+Future<double> _fetchAverageRating(String itemId) async {
+// ดึงข้อมูลจาก Firebase Realtime Database ของแต่ละรายการ "ratingsนักศึกษา/{itemId}"
+  final snapshot = await _ratingsRef.child(itemId).get();
+  // ตรวจสอบว่าข้อมูลมีอยู่จริงหรือไม่
+  if (snapshot.exists) {
+    // แปลงข้อมูลที่ดึงมาเป็น Map (Key-Value)
+    final data = snapshot.value as Map<dynamic, dynamic>?;
+    // ถ้าข้อมูลไม่เป็นค่าว่างให้ทำการคำนวณค่าเฉลี่ย
+    if (data != null) {
+      double totalRating = 0.0; // ตัวแปรเก็บผลรวมของคะแนนทั้งหมด
+      int count = 0; // ตัวแปรเก็บจำนวนผู้ใช้ที่ให้คะแนน
+      // วนลูปผ่านรายการทั้งหมดใน Firebase และรวมคะแนน
+      data.forEach((userId, ratingData) {
+        totalRating +=
+            (ratingData['rating'] as num).toDouble(); // เพิ่มค่าคะแนน
+        count++; // เพิ่มจำนวนผู้ให้คะแนน
+      });
+
+      // คำนวณค่าเฉลี่ย (totalRating / count) และคืนค่ากลับไป
+      return count > 0 ? totalRating / count : 0.0;
+    }
+  }
+  // หากไม่มีข้อมูลคะแนน ให้คืนค่า 0.0 (ไม่มีการให้คะแนน)
+  return 0.0;
+}
+
 class _SharePageState extends State<SharePage> {
   final DatabaseReference _dbRef = FirebaseDatabase.instance.ref();
   final _formKey = GlobalKey<FormState>();
@@ -36,26 +67,55 @@ class _SharePageState extends State<SharePage> {
   @override
   void initState() {
     super.initState();
-    _loadEnergyData();
+    _fetchData();
   }
 
-  Future<void> _loadEnergyData() async {
-    setState(() => _isLoading = true);
-    try {
-      final snapshot = await _dbRef.child('CleanenergyAttachai').once();
-      if (snapshot.snapshot.value != null) {
-        final data = snapshot.snapshot.value as Map;
-        _energyList = data.entries
-            .map((e) =>
-                {'id': e.key, ...Map<String, dynamic>.from(e.value as Map)})
-            .toList();
+  double averageRating = 0.0; // ตัวแปรเก็บค่าเฉลี่ยคะแนน
+
+  void _fetchData() {
+    _dbRef.child('CleanenergyAttachai').onValue.listen((event) async {
+      final data = event.snapshot.value as Map<dynamic, dynamic>?;
+      if (data != null) {
+        List<Map<String, dynamic>> tempList = [];
+
+        for (var key in data.keys) {
+          var value = data[key];
+          String imageUrl = value['imageUrl'] ?? "";
+
+          // ถ้ารันบนเว็บ ให้แปลง URL ให้สามารถใช้ได้
+          if (kIsWeb && imageUrl.isNotEmpty) {
+            try {
+              imageUrl = await FirebaseStorage.instance
+                  .refFromURL(imageUrl)
+                  .getDownloadURL();
+            } catch (e) {
+              print("Error loading image: $e");
+            }
+          }
+
+          // โหลดคะแนนเฉลี่ยของแต่ละรายการ
+          double averageRating = await _fetchAverageRating(key);
+
+          tempList.add({
+            'key': key,
+            'title': value['name'],
+            'description': value['description'],
+            'type': value['type'],
+            'imageUrl': imageUrl,
+            'averageRating': averageRating,
+          });
+        }
+
+        // เพิ่มการเรียงลำดับตาม `averageRating` จากมากไปน้อย
+        tempList
+            .sort((a, b) => b['averageRating'].compareTo(a['averageRating']));
+
+        setState(() {
+          _energyList = tempList;
+          _isLoading = false;
+        });
       }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading data: $e')),
-      );
-    }
-    setState(() => _isLoading = false);
+    });
   }
 
   Future<void> _pickImage() async {
@@ -180,7 +240,7 @@ class _SharePageState extends State<SharePage> {
 
       _clearForm();
       Navigator.pop(context);
-      _loadEnergyData();
+      _fetchData();
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('บันทึกข้อมูลสำเร็จ')),
@@ -206,28 +266,35 @@ class _SharePageState extends State<SharePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: _isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : ListView.builder(
               itemCount: _energyList.length,
               itemBuilder: (context, index) {
-                final energy = _energyList[index];
+                final item = _energyList[index];
                 return Card(
-                  margin: EdgeInsets.all(8),
+                  margin: const EdgeInsets.all(8.0),
                   child: ListTile(
-                    leading: energy['imageUrl'] != null
+                    leading: item['imageUrl'] != null && item['imageUrl'] != ''
                         ? Image.network(
-                            energy['imageUrl'],
+                            item['imageUrl'],
                             width: 50,
                             height: 50,
                             fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                const Icon(Icons.broken_image,
+                                    size: 50, color: Colors.red),
                           )
-                        : Icon(Icons.energy_savings_leaf),
-                    title: Text(energy['name']),
+                        : const Icon(Icons.image, size: 50, color: Colors.grey),
+                    title: Text(item['title']),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('${energy['type']}'),
-                        Text('${energy['description']}'),
+                        Text('${item['type']} - ${item['description']}'),
+                        Text(
+                          "⭐ คะแนนความพึงพอใจเฉลี่ย: ${item['averageRating'].toStringAsFixed(1)}",
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, color: Colors.blue),
+                        ),
                       ],
                     ),
                     onTap: () {
@@ -235,11 +302,11 @@ class _SharePageState extends State<SharePage> {
                         context,
                         MaterialPageRoute(
                           builder: (context) => ShowDetail(
-                            uid: energy['id'], // Corrected this line
-                            title: energy['name'], // Corrected this line
-                            description: energy['description'],
-                            type: energy['type'],
-                            imageUrl: energy['imageUrl'],
+                            uid: item['key'],
+                            title: item['title'],
+                            description: item['description'],
+                            type: item['type'],
+                            imageUrl: item['imageUrl'],
                           ),
                         ),
                       );

@@ -20,7 +20,7 @@ class profilesetup extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<profilesetup> {
-//ส่วนเขียน Code ภาษา dart เพื่อรับค่าจากหน้าจอมาคํานวณหรือมาทําบางอย่างและส่งค่ากลับไป
+//ส่วนเขียน Code ภาษา dart เพื่อรับค่าจากหน้าจอมาคํานวณหรือมาทําบางอย่างและส่งค่ากลับไปไป
 //ส่วนการออกแบบหน้าจอ
 
 //1) ประกาศตัวแปร formKey เป็ น globalkey เพื่อตรวจสอบการรับค่าที่ผู้ใช้ป้อนผ่านฟอร์ม
@@ -37,18 +37,18 @@ class _MyHomePageState extends State<profilesetup> {
   String? _selectedPrefix;
 //3) สร้างฟังก์ชันสําหรับการเลือกวันที่เพื่อไปเรียกใช้
 //ประกาศตัวแปรเก็บค่าการเลือกวันที่
-  DateTime? birthdayDate;
+  DateTime? _birthDate;
 //สร้างฟังก์ชันให้เลือกวันที่
   Future<void> pickProductionDate(BuildContext context) async {
     final DateTime? pickedDate = await showDatePicker(
       context: context,
-      initialDate: birthdayDate ?? DateTime.now(),
+      initialDate: _birthDate ?? DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     );
-    if (pickedDate != null && pickedDate != birthdayDate) {
+    if (pickedDate != null && pickedDate != _birthDate) {
       setState(() {
-        birthdayDate = pickedDate;
+        _birthDate = pickedDate;
         _birthDateController.text =
             "${pickedDate.day}/${pickedDate.month}/${pickedDate.year}";
       });
@@ -95,14 +95,13 @@ class _MyHomePageState extends State<profilesetup> {
         downloadUrl = _profileImageUrl;
       }
       await _dbRef.child('usersAttachai/$uid').set({
-        'prefix': _selectedPrefix ?? '', // ถ้า null ให้ใช้ค่าว่าง
-        'firstName': _firstName.text.trim(), // ตัดช่องว่างด้านหน้าและหลัง
+        'prefix': _selectedPrefix ?? '',
+        'firstName': _firstName.text.trim(),
         'lastName': _lastName.text.trim(),
         'username': _username.text.trim(),
         'phoneNumber': _phoneNumber.text.trim(),
-        'birthDate':
-            birthdayDate?.toIso8601String() ?? '', // ถ้า null ให้ส่งค่าว่าง
-        'profileImage': downloadUrl ?? '', // ถ้า null ให้ส่งค่าว่าง
+        'birthDate': _birthDate?.toIso8601String() ?? '',
+        'profileImage': downloadUrl ?? '',
         'profileComplete': true,
       });
       setState(() {
@@ -129,7 +128,7 @@ class _MyHomePageState extends State<profilesetup> {
   }
 
 //ประกาศตัวแปร datetime และ prefix
-  DateTime? _birthDate;
+  DateTime? birthdayDate;
 //ฟังก์ชัน ค่าเริ่มต้น โดยดึงค่าเดิมจากฐานข้อมูลขึ้นมาแสดงผล
   @override
   void initState() {

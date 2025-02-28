@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:intl/intl.dart'; // ใช้แปลงวันที่ให้เป็ นรูปแบบที่อ่านง่าย
 
 class ShowDetail extends StatefulWidget {
@@ -59,7 +60,9 @@ class _ShowDetailState extends State<ShowDetail> {
 // สร้างฟังกชันบันทึกความคิดเห็น ์
   Future<void> _addComment() async {
     if (_commentController.text.isEmpty) return;
+
     User? user = _auth.currentUser;
+
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("กรุณาเข้าสู่ระบบก่อนแสดงความคิดเห็น")));
@@ -80,6 +83,58 @@ class _ShowDetailState extends State<ShowDetail> {
     super.initState();
     _fetchComments();
     _fetchUserProfiles();
+    _fetchAverageRating();
+  }
+
+//2.1 ประกาศตัวแปรเพื่อเก็บค่าดาว คะแนนความพึงพอใจและจํานวนคนที่ให้ดาว
+  double _userRating = 0.0; //ประกาศตัวแปรเพื่อเก็บค่าดาวเริ ่มต้น
+  double _averageRating = 0.0; //ประกาศตัวแปรเพื่อเก็บค่าคะแนนความพึงพอใจเฉลี่ย
+  int _ratingCount = 0; //ประกาศตัวแปรเพื่อนับจํานวนคนที่ให้ดาว
+
+//2.2 สร้างฟังกชันเพื่อเกบคาคะแนนความพึงพอใจที่ผู ้ใช้แตละคนให้ในแตละรายการลงในตาราง rating
+//บันทึกคะแนนความพึงพอใจลง Realtime Databaseในตารางชื่อ ratingชื่อนักศึกษา
+  Future<void> _submitRating(double rating) async {
+    User? user = _auth.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("กรุณาเข้าสู ่ระบบก่อนให้คะแนน")));
+      return;
+    }
+
+    String userId = user.uid;
+    //เกบคะแนนความพึงพอใจกบวันเวลาให้คะแนน
+    await _commentRef.child("ratingAttachai/${widget.uid}/$userId").set({
+      'rating': rating,
+      'timestamp': DateTime.now().toIso8601String(),
+    });
+
+    _fetchAverageRating(); // อัปเดตค่าเฉลี่ยหลังจากให้คะแนน
+  }
+
+//2.3 สร้างฟังกชันเพื่อคํานวณคาคะแนนเฉลี่ยความพึงพอใจจากการให้คะแนนทั ้งหมดของผู ้ใช้
+  //คํานวณคาเฉลี่ยคะแนน
+  void _fetchAverageRating() {
+    _commentRef.child("ratingAttachai/${widget.uid}").onValue.listen((event) {
+      final data = event.snapshot.value as Map<dynamic, dynamic>?;
+      if (data != null) {
+        double totalRating =
+            0.0; //ประกาศตัวแปรคะแนนทังหมดให้มีคาเริมต้นเป็นศุนย์
+        int count = 0; //ประกาศตัวแปรสําหรับนับจํานวนผู ้ใช้ที่เข้ามาให้คะแนน
+        //วนรอบเพื่ออานคาคะแนนทังหมดมาบวกรวมกนไว้
+        data.forEach((userId, ratingData) {
+          totalRating += (ratingData['rating'] as num).toDouble();
+          count++;
+        });
+        //ตรวจสอบวามีคนมาให้คะแนนกคนถ้ามีมากกว่า0ให้เอาคะแนนทังหมดหารด้วยจํานวนคนที่มาให้คะแนนเกบในตัวแปรaverage
+        _averageRating = count > 0 ? totalRating / count : 0.0;
+        _ratingCount = count;
+      } else {
+        _averageRating = 0.0;
+        _ratingCount = 0;
+      }
+
+      setState(() {});
+    });
   }
 
 // สร้างฟังกชัน์ ดึงความคิดเห็นจาก Firebaseมาแสดงผล
@@ -132,7 +187,28 @@ class _ShowDetailState extends State<ShowDetail> {
             const SizedBox(height: 8),
             Text("รายละเอียด: ${widget.description}",
                 style: const TextStyle(fontSize: 16)),
-
+            const SizedBox(height: 8),
+            RatingBar.builder(
+              initialRating: _userRating, // คาคะแนนเริ่มตน
+              minRating: 1, // คาคะแนนต่ำสุดที่เลือกได
+              direction: Axis.horizontal, // การจัดเรียงดาว (แนวนอน)
+              allowHalfRating: true, // อนุญาตใหเลือกครึ่งคะแนน
+              itemCount: 5, // จำนวนดาวทั้งหมด
+              itemPadding:
+                  EdgeInsets.symmetric(horizontal: 4.0), // ระยะหางระหวางดาว
+              itemBuilder: (context, _) => Icon(
+                Icons.local_fire_department, //กำหนดรูปแบบของดาว (เชน ใช Icons.star)
+                color: Colors.amber,
+              ),
+              onRatingUpdate: (rating) {
+                _submitRating(rating);
+              },
+            ),
+            const SizedBox(height: 8),
+            Text(
+                "คะแนนเฉลี่ย: ${_averageRating.toStringAsFixed(1)} 🔥 ($_ratingCount รีวิว)",
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
 //เพิ่มส่วนแสดงความคิดเห็น
 // ส่วนการแสดงความคิดเห็น
             SizedBox(

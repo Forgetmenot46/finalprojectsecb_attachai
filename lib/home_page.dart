@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+/// ธีมการออกแบบ: ฟุตบอล (เชลซีเป็นตัวเลือกหลัก)
 class HomePage extends StatelessWidget {
   static const String routeName = '/homepage';
 
