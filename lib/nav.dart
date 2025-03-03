@@ -97,12 +97,15 @@ class _NavBarState extends State<NavBar> {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Color.fromARGB(255, 65, 0, 71),
-        title: Text(_selectedIndex == 0
-            ? 'หน้าแรก: Home Page'
-            : _selectedIndex == 1
-                ? 'Share'
-                : 'How To'),
+        backgroundColor: Color.fromRGBO(3, 70, 148, 1),
+        title: Text(
+          _selectedIndex == 0
+              ? 'หน้าแรก: Home Page'
+              : _selectedIndex == 1
+                  ? 'Share'
+                  : 'How To',
+          style: TextStyle(color: Colors.white),
+        ),
       ),
       drawer: Drawer(
         child: ListView(
@@ -110,11 +113,11 @@ class _NavBarState extends State<NavBar> {
           children: [
             UserAccountsDrawerHeader(
               decoration: BoxDecoration(
-                color: Color.fromARGB(255, 86, 0, 107),
+                color: Color.fromRGBO(3, 70, 148, 1),
               ),
               accountName: Text(
                 _userData?['prefix'] != null
-                    ? '${_userData!['prefix']} ${_userData!['firstName']}${_userData!['lastName']}'
+                    ? '${_userData!['prefix']} ${_userData!['firstName']} ${_userData!['lastName']}'
                     : 'ผู้ใช้: User',
                 style: TextStyle(color: Colors.white),
               ),
@@ -169,7 +172,9 @@ class _NavBarState extends State<NavBar> {
           ),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: Color.fromARGB(255, 65, 0, 71),
+        selectedItemColor: Color.fromRGBO(3, 70, 148, 1),
+        unselectedItemColor: Color.fromRGBO(3, 71, 148, 0.757),
+        backgroundColor: Colors.white,
         onTap: _onItemTapped,
       ),
     );

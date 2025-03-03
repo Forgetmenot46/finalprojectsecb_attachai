@@ -100,7 +100,7 @@ class _MyHomePageState extends State<profilesetup> {
         'lastName': _lastName.text.trim(),
         'username': _username.text.trim(),
         'phoneNumber': _phoneNumber.text.trim(),
-        'birthDate': _birthDate?.toIso8601String() ?? '',
+        'birthDate': _birthDateController.text,
         'profileImage': downloadUrl ?? '',
         'profileComplete': true,
       });

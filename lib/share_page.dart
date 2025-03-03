@@ -293,7 +293,8 @@ class _SharePageState extends State<SharePage> {
                         Text(
                           "⭐ คะแนนความพึงพอใจเฉลี่ย: ${item['averageRating'].toStringAsFixed(1)}",
                           style: TextStyle(
-                              fontWeight: FontWeight.bold, color: Colors.blue),
+                              fontWeight: FontWeight.bold,
+                              color: Color.fromRGBO(3, 70, 148, 1)),
                         ),
                       ],
                     ),
@@ -318,7 +319,7 @@ class _SharePageState extends State<SharePage> {
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddForm,
         child: Icon(Icons.add),
-        backgroundColor: Color.fromARGB(255, 255, 255, 255),
+        backgroundColor: Color.fromRGBO(3, 70, 148, 1),
       ),
     );
   }

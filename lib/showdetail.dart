@@ -160,7 +160,10 @@ class _ShowDetailState extends State<ShowDetail> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("...")),
+      appBar: AppBar(
+        title: Text("รายละเอียด"),
+        backgroundColor: Color.fromRGBO(3, 70, 148, 1), // เปลี่ยนสี AppBar
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -197,7 +200,8 @@ class _ShowDetailState extends State<ShowDetail> {
               itemPadding:
                   EdgeInsets.symmetric(horizontal: 4.0), // ระยะหางระหวางดาว
               itemBuilder: (context, _) => Icon(
-                Icons.local_fire_department, //กำหนดรูปแบบของดาว (เชน ใช Icons.star)
+                Icons
+                    .local_fire_department, //กำหนดรูปแบบของดาว (เชน ใช Icons.star)
                 color: Colors.amber,
               ),
               onRatingUpdate: (rating) {
@@ -207,8 +211,11 @@ class _ShowDetailState extends State<ShowDetail> {
             const SizedBox(height: 8),
             Text(
                 "คะแนนเฉลี่ย: ${_averageRating.toStringAsFixed(1)} 🔥 ($_ratingCount รีวิว)",
-                style:
-                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color:
+                        Color.fromRGBO(3, 70, 148, 1))), // เปลี่ยนสีคะแนนเฉลี่ย
 //เพิ่มส่วนแสดงความคิดเห็น
 // ส่วนการแสดงความคิดเห็น
             SizedBox(
@@ -262,7 +269,7 @@ class _ShowDetailState extends State<ShowDetail> {
                 Expanded(
                   child: TextField(
                     controller: _commentController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       hintText: "แสดงความคิดเห็น...",
                       border: OutlineInputBorder(),
                     ),
@@ -272,6 +279,10 @@ class _ShowDetailState extends State<ShowDetail> {
                 ElevatedButton(
                   onPressed: _addComment,
                   child: const Text("ส่ง"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        Color.fromRGBO(3, 70, 148, 1), // เปลี่ยนสีปุ่ม
+                  ),
                 ),
               ],
             ),
